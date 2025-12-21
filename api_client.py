@@ -120,13 +120,33 @@ class APIClient:
         payload = {
             "email": email,
             "full_name": full_name,
-            "role": role,
+            "role": role.lower(),
             "password": password,
             "is_active": True
         }
         
         try:
             response = requests.post(url, json=payload, headers=self._get_headers())
+            
+            # Get more detailed error information
+            if not response.ok:
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', error_data.get('message', 'Unknown error'))
+                    
+                    # If detail is a list (validation errors), format it
+                    if isinstance(error_detail, list):
+                        error_messages = []
+                        for err in error_detail:
+                            field = err.get('loc', ['unknown'])[-1]
+                            msg = err.get('msg', 'Invalid value')
+                            error_messages.append(f"{field}: {msg}")
+                        return {"error": "; ".join(error_messages), "status_code": response.status_code}
+                    
+                    return {"error": str(error_detail), "status_code": response.status_code}
+                except:
+                    return {"error": f"HTTP {response.status_code}: {response.text[:200]}", "status_code": response.status_code}
+            
             return self._handle_response(response)
         except requests.exceptions.RequestException as e:
             return {"error": f"Connection error: {str(e)}", "status_code": 500}
@@ -159,21 +179,47 @@ class APIClient:
         except requests.exceptions.RequestException as e:
             return {"error": f"Connection error: {str(e)}", "status_code": 500}
     
-    def create_course(self, name: str, course_type: str, category: str, price: float, 
-                     status: str = "active", description: str = "") -> Dict[str, Any]:
+    def create_course(self, title: str, description: str, category: str, course_type: str,
+                     duration_weeks: int, price: float, instructor: str, start_date: str,
+                     end_date: str, max_participants: int, status: str = "Active") -> Dict[str, Any]:
         """Create a new course"""
         url = f"{self.base_url}{self.api_prefix}/courses"
         payload = {
-            "name": name,
-            "type": course_type,
+            "title": title,
+            "description": description,
             "category": category,
+            "type": course_type,
+            "duration_weeks": duration_weeks,
             "price": price,
-            "status": status,
-            "description": description
+            "instructor": instructor,
+            "start_date": start_date,
+            "end_date": end_date,
+            "max_participants": max_participants,
+            "status": status
         }
         
         try:
             response = requests.post(url, json=payload, headers=self._get_headers())
+            
+            # Get more detailed error information
+            if not response.ok:
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', error_data.get('message', 'Unknown error'))
+                    
+                    # If detail is a list (validation errors), format it
+                    if isinstance(error_detail, list):
+                        error_messages = []
+                        for err in error_detail:
+                            field = err.get('loc', ['unknown'])[-1]
+                            msg = err.get('msg', 'Invalid value')
+                            error_messages.append(f"{field}: {msg}")
+                        return {"error": "; ".join(error_messages), "status_code": response.status_code}
+                    
+                    return {"error": str(error_detail), "status_code": response.status_code}
+                except:
+                    return {"error": f"HTTP {response.status_code}: {response.text[:200]}", "status_code": response.status_code}
+            
             return self._handle_response(response)
         except requests.exceptions.RequestException as e:
             return {"error": f"Connection error: {str(e)}", "status_code": 500}
@@ -211,6 +257,44 @@ class APIClient:
             response = requests.get(url, params=params, headers=self._get_headers())
             return self._handle_response(response)
         except requests.exceptions.RequestException as e:
+            return {"error": f"Connection error: {str(e)}", "status_code": 500}
+    
+    def create_payment(self, participant_id: str, course_id: str, amount: float,
+                      status: str = "paid") -> Dict[str, Any]:
+        """Create a new payment record"""
+        url = f"{self.base_url}{self.api_prefix}/payments"
+        payload = {
+            "participant_id": participant_id,
+            "course_id": course_id,
+            "amount": amount,
+            "status": status.lower()
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=self._get_headers())
+            
+            # Get more detailed error information
+            if not response.ok:
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', error_data.get('message', 'Unknown error'))
+                    
+                    # If detail is a list (validation errors), format it
+                    if isinstance(error_detail, list):
+                        error_messages = []
+                        for err in error_detail:
+                            field = err.get('loc', ['unknown'])[-1]
+                            msg = err.get('msg', 'Invalid value')
+                            error_messages.append(f"{field}: {msg}")
+                        return {"error": "; ".join(error_messages), "status_code": response.status_code}
+                    
+                    return {"error": str(error_detail), "status_code": response.status_code}
+                except:
+                    return {"error": f"HTTP {response.status_code}: {response.text[:200]}", "status_code": response.status_code}
+            
+            return self._handle_response(response)
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Connection error: {str(e)}", "status_code": 500}
             return {"error": f"Connection error: {str(e)}", "status_code": 500}
     
     # ==================== METRICS ENDPOINTS ====================

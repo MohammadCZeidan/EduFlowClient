@@ -255,11 +255,10 @@ with st.sidebar:
 if st.button("← Users", key="back_to_users"):
     st.switch_page("pages/admin.py")
 
-st.markdown('<div class="breadcrumb-separator">/ Add New User</div>', unsafe_allow_html=True)
+st.markdown('<div class="breadcrumb-separator">Add New User</div>', unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Form container
-st.markdown('<div class="form-container">', unsafe_allow_html=True)
 st.markdown('<div class="form-title">Add New User</div>', unsafe_allow_html=True)
 
 # Form fields

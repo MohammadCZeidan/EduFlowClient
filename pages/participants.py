@@ -403,32 +403,45 @@ with st.sidebar:
 # Main content
 st.markdown('<div class="page-header">Participants</div>', unsafe_allow_html=True)
 
-# Metric cards
+# Metric cards - Fetch participant data for metrics
+with st.spinner("Loading metrics..."):
+    participants_metrics_response = st.session_state.api_client.get_participants()
+
+if "error" not in participants_metrics_response:
+    participants_list_metrics = participants_metrics_response.get('participants', [])
+    total_participants_count = len(participants_list_metrics)
+    completed_count = sum(1 for p in participants_list_metrics if p.get('course_status', '').lower() == 'completed')
+    ongoing_count = sum(1 for p in participants_list_metrics if p.get('course_status', '').lower() in ['active', 'in progress', 'ongoing'])
+else:
+    total_participants_count = 0
+    completed_count = 0
+    ongoing_count = 0
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">👥</div>
-        <div class="metric-value">53</div>
+        <div class="metric-value">{total_participants_count}</div>
         <div class="metric-label">Total Participants</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">✓</div>
-        <div class="metric-value">13</div>
+        <div class="metric-value">{completed_count}</div>
         <div class="metric-label">Completed Courses</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">🔄</div>
-        <div class="metric-value">20</div>
+        <div class="metric-value">{ongoing_count}</div>
         <div class="metric-label">Ongoing Courses</div>
     </div>
     """, unsafe_allow_html=True)
@@ -441,202 +454,197 @@ chart_col, breakdown_col = st.columns([1.4, 1])
 with chart_col:
     st.markdown('<div class="chart-container">', unsafe_allow_html=True)
     
-    # Participants growth chart
-    years = ['2019', '2020', '2021', '2022', '2023', '2024', '2025']
-    participants = [145, 178, 234, 289, 356, 423, 487]
+    # Fetch participant analytics from API
+    # TODO: Add API endpoint for participant growth by year
+    # For now, using the participant count from current data
+    with st.spinner("Loading analytics..."):
+        participants_response = st.session_state.api_client.get_participants()
     
-    fig = go.Figure(data=[
-        go.Bar(
-            x=years,
-            y=participants,
-            marker=dict(color='#51287E'),
-            name='Participants'
+    if "error" not in participants_response:
+        total_participants = participants_response.get('total', 0)
+        participants_list = participants_response.get('participants', [])
+        
+        # Group by year if date field exists
+        year_counts = {}
+        for p in participants_list:
+            # This assumes there's a created_at or year field in the data
+            # Adjust based on actual API response structure
+            year = "2025"  # Default to current year
+            year_counts[year] = year_counts.get(year, 0) + 1
+        
+        # Create chart with available data
+        if year_counts:
+            years = sorted(year_counts.keys())
+            counts = [year_counts[y] for y in years]
+        else:
+            years = ['2025']
+            counts = [total_participants]
+        
+        fig = go.Figure(data=[
+            go.Bar(
+                x=years,
+                y=counts,
+                marker=dict(color='#51287E'),
+                name='Participants'
+            )
+        ])
+        
+        fig.update_layout(
+            height=300,
+            margin=dict(l=50, r=20, t=20, b=50),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='#E2E8F0',
+                gridwidth=1,
+                griddash='dash',
+                title='',
+                tickfont=dict(family='Inter', size=12, color='#64748B')
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='#E2E8F0',
+                gridwidth=1,
+                griddash='dash',
+                title='',
+                tickfont=dict(family='Inter', size=12, color='#64748B')
+            ),
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                yanchor='bottom',
+                y=1.02,
+                xanchor='center',
+                x=0.5,
+                font=dict(family='Roboto', size=16, color='#51287E')
+            )
         )
-    ])
+        
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    else:
+        st.error(f"Failed to load analytics: {participants_response.get('error', 'Unknown error')}")
     
-    fig.update_layout(
-        height=300,
-        margin=dict(l=50, r=20, t=20, b=50),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        xaxis=dict(
-            showgrid=True,
-            gridcolor='#E2E8F0',
-            gridwidth=1,
-            griddash='dash',
-            title='',
-            tickfont=dict(family='Inter', size=12, color='#64748B')
-        ),
-        yaxis=dict(
-            showgrid=True,
-            gridcolor='#E2E8F0',
-            gridwidth=1,
-            griddash='dash',
-            title='',
-            tickfont=dict(family='Inter', size=12, color='#64748B'),
-            range=[0, 600]
-        ),
-        showlegend=True,
-        legend=dict(
-            orientation='h',
-            yanchor='bottom',
-            y=1.02,
-            xanchor='center',
-            x=0.5,
-            font=dict(family='Roboto', size=16, color='#51287E')
-        )
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
     st.markdown('</div>', unsafe_allow_html=True)
 
 with breakdown_col:
-    st.markdown("""
-    <div class="chart-container breakdown-container">
-        <div class="breakdown-title">Year-by-Year Breakdown</div>
+    # Fetch year-by-year breakdown from API
+    st.markdown('<div class="chart-container breakdown-container">', unsafe_allow_html=True)
+    st.markdown('<div class="breakdown-title">Year-by-Year Breakdown</div>', unsafe_allow_html=True)
+    
+    if "error" not in participants_response:
+        participants_list = participants_response.get('participants', [])
         
+        # Group participants by year and calculate growth
+        year_data = {}
+        for p in participants_list:
+            # Extract year from participant data (adjust field name as needed)
+            # For now, counting current participants
+            year = "2025"  # Default year, should come from API data
+            year_data[year] = year_data.get(year, 0) + 1
+        
+        # Sort years and calculate growth
+        sorted_years = sorted(year_data.keys())
+        
+        st.markdown("""
         <div class="breakdown-table-header">
             <div class="breakdown-table-header-cell">Year</div>
             <div class="breakdown-table-header-cell">Participants</div>
             <div class="breakdown-table-header-cell">Growth</div>
         </div>
-        
         <div class="breakdown-table-body">
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2019</div>
-                <div class="breakdown-cell">145</div>
-                <div class="breakdown-growth-none">-</div>
-            </div>
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2020</div>
-                <div class="breakdown-cell">178</div>
-                <div class="breakdown-growth">+22.8%</div>
-            </div>
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2021</div>
-                <div class="breakdown-cell">234</div>
-                <div class="breakdown-growth">+31.5%</div>
-            </div>
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2022</div>
-                <div class="breakdown-cell">289</div>
-                <div class="breakdown-growth">+23.5%</div>
-            </div>
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2023</div>
-                <div class="breakdown-cell">356</div>
-                <div class="breakdown-growth">+23.2%</div>
-            </div>
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2024</div>
-                <div class="breakdown-cell">423</div>
-                <div class="breakdown-growth">+18.8%</div>
-            </div>
-            <div class="breakdown-row">
-                <div class="breakdown-cell">2025</div>
-                <div class="breakdown-cell">487</div>
-                <div class="breakdown-growth">+15.1%</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Participants table and detail panel
-table_col, detail_col = st.columns([1.45, 1])
-
-with table_col:
-    st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    
-    # Filter bar
-    filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 1.5])
-    
-    with filter_col1:
-        st.selectbox("Course", ["All Courses", "UI/UX", "Leadership", "Excel"], key="course_filter", label_visibility="collapsed")
-    
-    with filter_col2:
-        st.selectbox("Type", ["All Types", "External", "Internal"], key="type_filter", label_visibility="collapsed")
-    
-    with filter_col3:
-        st.text_input("Search", placeholder="Search....", key="search", label_visibility="collapsed")
-    
-    # Table header
-    st.markdown("""
-    <div class="table-header">
-        <div class="table-header-text">Participants</div>
-        <div class="table-header-text">Status</div>
-        <div class="table-header-text">Course</div>
-        <div class="table-header-text">Type</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Fetch participants from API
-    with st.spinner("Loading participants..."):
-        participants_data_response = st.session_state.api_client.get_participants()
-    
-    # Check for errors
-    if "error" in participants_data_response:
-        st.error(f"Failed to load participants: {participants_data_response['error']}")
-        participants_data = []
-    else:
-        # Extract participants array from paginated response
-        participants_data = participants_data_response.get('participants', [])
-    
-    # Selected participant (first one by default)
-    selected_participant = participants_data[0] if participants_data else None
-    
-    for i, participant in enumerate(participants_data):
-        selected_class = "selected" if i == 0 else ""
-        name = participant.get('name', 'N/A')
-        status = participant.get('status', 'Pending')
-        status_color = status.lower().replace(' ', '_')
-        course = participant.get('course_name', 'N/A')
-        participant_type = participant.get('type', 'N/A')
-        
-        st.markdown(f"""
-        <div class="table-row {selected_class}">
-            <div class="participant-info">
-                <div class="participant-avatar">👤</div>
-                <div class="participant-name">{name}</div>
-            </div>
-            <div class="status-{status_color}">{status}</div>
-            <div class="participant-name">{course}</div>
-            <div class="participant-name">{participant_type}</div>
-        </div>
         """, unsafe_allow_html=True)
-    
-    if not participants_data:
-        st.info("No participants found")
+        
+        prev_count = 0
+        for i, year in enumerate(sorted_years):
+            count = year_data[year]
+            if i == 0:
+                growth_html = '<div class="breakdown-growth-none">-</div>'
+            else:
+                growth_pct = ((count - prev_count) / prev_count * 100) if prev_count > 0 else 0
+                growth_html = f'<div class="breakdown-growth">+{growth_pct:.1f}%</div>'
+            
+            st.markdown(f"""
+            <div class="breakdown-row">
+                <div class="breakdown-cell">{year}</div>
+                <div class="breakdown-cell">{count}</div>
+                {growth_html}
+            </div>
+            """, unsafe_allow_html=True)
+            prev_count = count
+        
+        if not sorted_years:
+            st.info("No year-by-year data available")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.error("Unable to load breakdown data")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-with detail_col:
-    if selected_participant:
-        name = selected_participant.get('name', 'N/A')
-        course = selected_participant.get('course_name', 'N/A')
-        cohort = selected_participant.get('cohort_name', 'N/A')
-        participant_type = selected_participant.get('type', 'N/A')
-        course_status = selected_participant.get('course_status', 'N/A')
-        payment_status = selected_participant.get('payment_status', 'N/A')
-        
-        st.markdown(f"""
-        <div class="detail-panel">
-            <div class="detail-header">
-                <div class="detail-avatar">👤</div>
-                <div class="detail-name">{name}</div>
-            </div>
-            
-            <div class="detail-info">
-                <div class="detail-item">Course: {course}</div>
-                <div class="detail-item">Cohort: {cohort}</div>
-                <div class="detail-item">Participant Type: {participant_type}</div>
-                <div class="detail-item">Course Status: {course_status}</div>
-                <div class="detail-item">Payment Status: {payment_status}</div>
-            </div>
-            
-            <div class="detail-button">View More Details</div>
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Participants table
+st.markdown('<div class="table-container">', unsafe_allow_html=True)
+
+# Filter bar
+filter_col1, filter_col2, filter_col3 = st.columns([1, 1, 1.5])
+
+with filter_col1:
+    st.selectbox("Course", ["All Courses", "UI/UX", "Leadership", "Excel"], key="course_filter", label_visibility="collapsed")
+
+with filter_col2:
+    st.selectbox("Type", ["All Types", "External", "Internal"], key="type_filter", label_visibility="collapsed")
+
+with filter_col3:
+    st.text_input("Search", placeholder="Search....", key="search", label_visibility="collapsed")
+
+# Table header
+st.markdown("""
+<div class="table-header">
+    <div class="table-header-text">Participants</div>
+    <div class="table-header-text">Status</div>
+    <div class="table-header-text">Course</div>
+    <div class="table-header-text">Type</div>
+</div>
+""", unsafe_allow_html=True)
+
+# Fetch participants from API
+with st.spinner("Loading participants..."):
+    participants_data_response = st.session_state.api_client.get_participants()
+
+# Check for errors
+if "error" in participants_data_response:
+    st.error(f"Failed to load participants: {participants_data_response['error']}")
+    participants_data = []
+else:
+    # Extract participants array from paginated response
+    participants_data = participants_data_response.get('participants', [])
+
+# Selected participant (first one by default)
+selected_participant = participants_data[0] if participants_data else None
+
+for i, participant in enumerate(participants_data):
+    selected_class = "selected" if i == 0 else ""
+    name = participant.get('name', 'N/A')
+    status = participant.get('status', 'Pending')
+    status_color = status.lower().replace(' ', '_')
+    course = participant.get('course_name', 'N/A')
+    participant_type = participant.get('type', 'N/A')
+    
+    st.markdown(f"""
+    <div class="table-row {selected_class}">
+        <div class="participant-info">
+            <div class="participant-avatar">👤</div>
+            <div class="participant-name">{name}</div>
         </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("No participant selected")
+        <div class="status-{status_color}">{status}</div>
+        <div class="participant-name">{course}</div>
+        <div class="participant-name">{participant_type}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+if not participants_data:
+    st.info("No participants found")
+
+st.markdown('</div>', unsafe_allow_html=True)

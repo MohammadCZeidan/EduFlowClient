@@ -297,32 +297,51 @@ with st.sidebar:
 user_name = st.session_state.get('user', {}).get('full_name', "User")
 st.markdown(f'<h2 style="color: #2E2E2E; margin-bottom: 30px;">Hello, {user_name}</h2>', unsafe_allow_html=True)
 
-# Fetch metrics from API
+# Fetch all data from API to calculate metrics
 with st.spinner("Loading dashboard metrics..."):
-    metrics = st.session_state.api_client.get_metrics_summary()
+    courses_response = st.session_state.api_client.get_courses()
+    participants_response = st.session_state.api_client.get_participants()
+    payments_response = st.session_state.api_client.get_payments()
+    users_response = st.session_state.api_client.get_users()
 
-# Check for errors
-if "error" in metrics:
-    st.error(f"Failed to load metrics: {metrics['error']}")
-    # Use default values as fallback
-    total_courses = 0
-    total_registrations = 0
-    total_employees = 0
-    total_participants = 0
-    total_revenue = 0
-    payments_collected = 0
-    payments_pending = 0
-    completion_rate = 0
-else:
-    # Extract metrics from API response
-    total_courses = metrics.get('total_courses', 0)
-    total_registrations = metrics.get('total_registered', 0)
-    total_employees = metrics.get('total_employees', 0)
-    total_participants = metrics.get('total_participants', 0)
-    total_revenue = metrics.get('total_revenue', 0)
-    payments_collected = metrics.get('total_paid', 0)
-    payments_pending = metrics.get('total_pending', 0)
-    completion_rate = metrics.get('completion_rate', 0) or 0
+# Calculate metrics from actual data
+total_courses = 0
+total_registrations = 0
+total_employees = 0
+total_participants = 0
+total_revenue = 0
+payments_collected = 0
+payments_pending = 0
+completion_rate = 0
+
+# Count courses
+if "error" not in courses_response:
+    courses_list = courses_response.get('courses', [])
+    total_courses = len(courses_list)
+
+# Count participants and registrations
+if "error" not in participants_response:
+    participants_list = participants_response.get('participants', [])
+    total_participants = len(participants_list)
+    total_registrations = participants_response.get('total', len(participants_list))
+    
+    # Calculate completion rate
+    completed = sum(1 for p in participants_list if p.get('course_status', '').lower() == 'completed')
+    if total_participants > 0:
+        completion_rate = (completed / total_participants) * 100
+
+# Count payments and revenue
+if "error" not in payments_response:
+    payments_list = payments_response.get('payments', [])
+    total_revenue = sum(p.get('amount', 0) for p in payments_list)
+    payments_collected = sum(p.get('amount', 0) for p in payments_list if p.get('status', '').lower() == 'paid')
+    payments_pending = sum(p.get('amount', 0) for p in payments_list if p.get('status', '').lower() == 'pending')
+
+# Count employees
+if "error" not in users_response:
+    users_list = users_response.get('users', [])
+    # Count users with roles: hr, finance, admin, instructor
+    total_employees = sum(1 for u in users_list if u.get('role', '').lower() in ['hr', 'finance', 'admin', 'instructor'])
 
 # ===== METRICS ROW 1 (4 columns) =====
 st.markdown('<div style="margin-bottom: 16px;"></div>', unsafe_allow_html=True)

@@ -351,33 +351,47 @@ with col_header2:
     if st.button("+ Add New Course", key="add_course", use_container_width=True):
         st.switch_page("pages/add_course.py")
 
-# Metrics Row
+# Metrics Row - Fetch course data for metrics
 st.markdown('<div style="margin-bottom: 16px;"></div>', unsafe_allow_html=True)
+
+with st.spinner("Loading metrics..."):
+    courses_metrics_response = st.session_state.api_client.get_courses()
+
+if "error" not in courses_metrics_response:
+    courses_list_metrics = courses_metrics_response.get('courses', [])
+    total_courses_count = len(courses_list_metrics)
+    completed_courses_count = sum(1 for c in courses_list_metrics if c.get('status', '').lower() == 'completed')
+    ongoing_courses_count = sum(1 for c in courses_list_metrics if c.get('status', '').lower() == 'active')
+else:
+    total_courses_count = 0
+    completed_courses_count = 0
+    ongoing_courses_count = 0
+
 col1, col2, col3 = st.columns(3, gap="small")
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">📚</div>
-        <div class="metric-value">53</div>
+        <div class="metric-value">{total_courses_count}</div>
         <div class="metric-label">Total Courses</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">✅</div>
-        <div class="metric-value">13</div>
+        <div class="metric-value">{completed_courses_count}</div>
         <div class="metric-label">Completed Courses</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">⏱️</div>
-        <div class="metric-value">20</div>
+        <div class="metric-value">{ongoing_courses_count}</div>
         <div class="metric-label">Ongoing Courses</div>
     </div>
     """, unsafe_allow_html=True)
@@ -425,23 +439,40 @@ with col_list:
     """, unsafe_allow_html=True)
     
     # Store selected course in session state
-    if 'selected_course' not in st.session_state and courses:
-        st.session_state.selected_course = courses[0]
+    if 'selected_course_index' not in st.session_state:
+        st.session_state.selected_course_index = 0
     
     # Course rows
     for i, course in enumerate(courses):
-        selected_class = "selected" if i == 0 else ""
+        selected_class = "selected" if i == st.session_state.selected_course_index else ""
         course_name = course.get('title', course.get('name', 'N/A'))
         course_id = course.get('id', 'N/A')
         category = course.get('category', 'N/A')
         status = course.get('status', 'N/A')
         course_type = course.get('type', 'N/A')
         
+        # Create a button for each row to make it clickable
+        if st.button(
+            f"{course_name}", 
+            key=f"course_btn_{i}",
+            use_container_width=True,
+            type="secondary" if i != st.session_state.selected_course_index else "primary"
+        ):
+            st.session_state.selected_course_index = i
+            st.rerun()
+        
+        # Hide the button with CSS and show custom HTML
         st.markdown(f"""
-        <div class="table-row {selected_class}">
+        <style>
+            button[data-testid="baseButton-secondary"]:has([key="course_btn_{i}"]),
+            button[data-testid="baseButton-primary"]:has([key="course_btn_{i}"]) {{
+                display: none;
+            }}
+        </style>
+        <div class="table-row {selected_class}" onclick="document.querySelector('[key=course_btn_{i}]').click();" style="cursor: pointer;">
             <div style="width: 25%;">
                 <div style="font-size: 16px; color: #2E2E2E;">{course_name}</div>
-                <div style="font-size: 16px; color: #565656; margin-top: 4px;">ID: {course_id[:15]}...</div>
+                <div style="font-size: 16px; color: #565656; margin-top: 4px;">ID: {course_id[:15] if len(str(course_id)) > 15 else course_id}...</div>
             </div>
             <div style="width: 25%; text-align: center;">
                 <span class="category-badge">{category}</span>
@@ -469,9 +500,9 @@ with col_detail:
     # Course image placeholder
     st.markdown('<div class="course-image"></div>', unsafe_allow_html=True)
     
-    # Course details from first course or selected
-    if courses:
-        course = courses[0]
+    # Course details from selected course
+    if courses and st.session_state.selected_course_index < len(courses):
+        course = courses[st.session_state.selected_course_index]
         course_name = course.get('title', course.get('name', 'N/A'))
         category = course.get('category', 'N/A')
         course_type = course.get('type', 'N/A')

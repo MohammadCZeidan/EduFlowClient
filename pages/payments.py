@@ -337,41 +337,56 @@ with st.sidebar:
 # Main content
 st.markdown('<div class="page-header">Payment</div>', unsafe_allow_html=True)
 
-# Metric cards
+# Metric cards - Fetch payment data for metrics
+with st.spinner("Loading metrics..."):
+    payments_metrics_response = st.session_state.api_client.get_payments()
+
+if "error" not in payments_metrics_response:
+    payments_list_metrics = payments_metrics_response.get('payments', [])
+    total_revenue = sum(p.get('amount', 0) for p in payments_list_metrics)
+    completed_payment_count = sum(1 for p in payments_list_metrics if p.get('status', '').lower() == 'paid')
+    pending_payment_count = sum(1 for p in payments_list_metrics if p.get('status', '').lower() == 'pending')
+    overdue_payment_count = sum(1 for p in payments_list_metrics if p.get('status', '').lower() == 'overdue')
+else:
+    total_revenue = 0
+    completed_payment_count = 0
+    pending_payment_count = 0
+    overdue_payment_count = 0
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">💰</div>
-        <div class="metric-value">53</div>
+        <div class="metric-value">${total_revenue:,.0f}</div>
         <div class="metric-label">Total Revenue</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">✓</div>
-        <div class="metric-value">13</div>
+        <div class="metric-value">{completed_payment_count}</div>
         <div class="metric-label">Completed Payment</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">⏳</div>
-        <div class="metric-value">20</div>
+        <div class="metric-value">{pending_payment_count}</div>
         <div class="metric-label">Pending Payment</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-icon">⚠️</div>
-        <div class="metric-value">20</div>
+        <div class="metric-value">{overdue_payment_count}</div>
         <div class="metric-label">Overdue Payment</div>
     </div>
     """, unsafe_allow_html=True)
@@ -414,7 +429,15 @@ with table_col:
     
     # Check for errors
     if "error" in payments_response:
-        st.error(f"Failed to load payments: {payments_response['error']}")
+        error_msg = payments_response['error']
+        status_code = payments_response.get('status_code', 'Unknown')
+        
+        # If unauthorized, redirect to login
+        if status_code == 401:
+            st.warning("Session expired. Please login again.")
+            st.switch_page("pages/login.py")
+        else:
+            st.error(f"Failed to load payments: {error_msg} (Status: {status_code})")
         payments_data = []
     else:
         # Extract payments array from paginated response
@@ -449,6 +472,68 @@ with table_col:
         st.info("No payments found")
     
     st.markdown('</div>', unsafe_allow_html=True)
+
+# Add payment section below the table
+st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("### Record New Payment", unsafe_allow_html=True)
+
+# Fetch participants and courses for dropdowns
+with st.spinner("Loading data..."):
+    participants_response = st.session_state.api_client.get_participants()
+    courses_response = st.session_state.api_client.get_courses()
+
+# Extract data
+participants_list = participants_response.get('participants', []) if "error" not in participants_response else []
+courses_list = courses_response.get('courses', []) if "error" not in courses_response else []
+
+# Create payment form
+payment_col1, payment_col2, payment_col3, payment_col4 = st.columns([2, 2, 1, 1])
+
+with payment_col1:
+    # Create participant options
+    participant_options = ["Select Candidate"] + [f"{p.get('name', 'N/A')} - {p.get('course_name', 'N/A')}" for p in participants_list]
+    selected_participant = st.selectbox("Select Candidate", participant_options, key="payment_participant")
+
+with payment_col2:
+    # Create course options
+    course_options = ["Select Course"] + [c.get('title', c.get('name', 'N/A')) for c in courses_list]
+    selected_course = st.selectbox("Select Course", course_options, key="payment_course")
+
+with payment_col3:
+    payment_amount = st.number_input("Amount ($)", min_value=0.0, step=10.0, key="payment_amount")
+
+with payment_col4:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Mark as Paid", use_container_width=True, type="primary"):
+        if selected_participant != "Select Candidate" and selected_course != "Select Course" and payment_amount > 0:
+            # Get participant index
+            participant_index = participant_options.index(selected_participant) - 1
+            if participant_index >= 0 and participant_index < len(participants_list):
+                participant = participants_list[participant_index]
+                participant_id = participant.get('id')
+                
+                # Get course index
+                course_index = course_options.index(selected_course) - 1
+                if course_index >= 0 and course_index < len(courses_list):
+                    course = courses_list[course_index]
+                    course_id = course.get('id')
+                    
+                    # Create payment record via API
+                    with st.spinner("Recording payment..."):
+                        result = st.session_state.api_client.create_payment(
+                            participant_id=participant_id,
+                            course_id=course_id,
+                            amount=payment_amount,
+                            status="paid"
+                        )
+                    
+                    if "error" in result:
+                        st.error(f"Failed to record payment: {result['error']}")
+                    else:
+                        st.success(f"Payment of ${payment_amount:.2f} recorded for {participant.get('name', 'N/A')} - {selected_course}")
+                        st.rerun()
+        else:
+            st.error("Please fill in all fields (Candidate, Course, and Amount)")
 
 with detail_col:
     if selected_payment:
