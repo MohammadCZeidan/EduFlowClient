@@ -1,7 +1,22 @@
 import streamlit as st
+import sys
+import os
+
+# Add parent directory to path to import api_client
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api_client import APIClient
 
 # Page config
 st.set_page_config(page_title="Add New User", page_icon="👤", layout="wide")
+
+# Initialize API client
+if 'api_client' not in st.session_state:
+    st.session_state.api_client = APIClient()
+
+# Check if user is logged in
+if 'access_token' not in st.session_state:
+    st.warning("Please login to add users")
+    st.switch_page("pages/login.py")
 
 # Custom CSS for styling
 st.markdown("""
@@ -257,17 +272,29 @@ st.markdown("<br>", unsafe_allow_html=True)
 password = st.text_input("Password", placeholder="Enter Password", type="password", label_visibility="visible", key="user_password")
 st.markdown("<br>", unsafe_allow_html=True)
 
-role = st.selectbox("Role", ["Select Role", "Admin", "Manager", "Instructor", "HR"], key="user_role")
+role = st.selectbox("Role", ["Select Role", "hr", "finance", "admin", "instructor", "student"], key="user_role")
 st.markdown("<br>", unsafe_allow_html=True)
 
-confirm_password = st.text_input("Confirm Password", placeholder="Enter Name", type="password", label_visibility="visible", key="user_confirm_password")
+confirm_password = st.text_input("Confirm Password", placeholder="Confirm Password", type="password", label_visibility="visible", key="user_confirm_password")
 
 # Submit button
 st.markdown('<div class="submit-button">', unsafe_allow_html=True)
 if st.button("+ Add New User", key="submit_user"):
     if password == confirm_password and name and email and role != "Select Role":
-        st.success("User added successfully!")
-        # Here you would normally save to database
+        # Call API to create user
+        with st.spinner("Creating user..."):
+            result = st.session_state.api_client.create_user(
+                email=email,
+                full_name=name,
+                role=role,
+                password=password
+            )
+        
+        if "error" in result:
+            st.error(f"Failed to create user: {result['error']}")
+        else:
+            st.success("User added successfully!")
+            st.switch_page("pages/admin.py")
     elif password != confirm_password:
         st.error("Passwords do not match!")
     else:

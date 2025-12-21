@@ -1,7 +1,22 @@
 import streamlit as st
 import pandas as pd
+import sys
+import os
+
+# Add parent directory to path to import api_client
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api_client import APIClient
 
 st.set_page_config(page_title="Courses - EduFlow", layout="wide")
+
+# Initialize API client
+if 'api_client' not in st.session_state:
+    st.session_state.api_client = APIClient()
+
+# Check if user is logged in
+if 'access_token' not in st.session_state:
+    st.warning("Please login to access courses")
+    st.switch_page("pages/login.py")
 
 # Enhanced Custom CSS matching Figma design
 st.markdown("""
@@ -387,6 +402,18 @@ with col_list:
     
     st.markdown('<div style="margin-bottom: 16px;"></div>', unsafe_allow_html=True)
     
+    # Fetch courses from API
+    with st.spinner("Loading courses..."):
+        courses_data = st.session_state.api_client.get_courses()
+    
+    # Check for errors
+    if "error" in courses_data:
+        st.error(f"Failed to load courses: {courses_data['error']}")
+        courses = []
+    else:
+        # Extract courses array from paginated response
+        courses = courses_data.get('courses', [])
+    
     # Table Header
     st.markdown("""
     <div class="table-header">
@@ -397,38 +424,42 @@ with col_list:
     </div>
     """, unsafe_allow_html=True)
     
-    # Sample course data
-    courses = [
-        {"name": "UI/UX", "id": "Cohort: UIX07", "category": "Skills", "status": "Ongoing", "type": "External"},
-        {"name": "UI/UX", "id": "ID: CRS-2023-001", "category": "Skills", "status": "Ongoing", "type": "External"},
-        {"name": "UI/UX", "id": "ID: CRS-2023-001", "category": "Skills", "status": "Ongoing", "type": "External"},
-        {"name": "UI/UX", "id": "ID: CRS-2023-001", "category": "Skills", "status": "Ongoing", "type": "External"},
-        {"name": "UI/UX", "id": "ID: CRS-2023-001", "category": "Skills", "status": "Ongoing", "type": "External"},
-    ]
+    # Store selected course in session state
+    if 'selected_course' not in st.session_state and courses:
+        st.session_state.selected_course = courses[0]
     
     # Course rows
     for i, course in enumerate(courses):
         selected_class = "selected" if i == 0 else ""
+        course_name = course.get('title', course.get('name', 'N/A'))
+        course_id = course.get('id', 'N/A')
+        category = course.get('category', 'N/A')
+        status = course.get('status', 'N/A')
+        course_type = course.get('type', 'N/A')
+        
         st.markdown(f"""
         <div class="table-row {selected_class}">
             <div style="width: 25%;">
-                <div style="font-size: 16px; color: #2E2E2E;">{course['name']}</div>
-                <div style="font-size: 16px; color: #565656; margin-top: 4px;">{course['id']}</div>
+                <div style="font-size: 16px; color: #2E2E2E;">{course_name}</div>
+                <div style="font-size: 16px; color: #565656; margin-top: 4px;">ID: {course_id[:15]}...</div>
             </div>
             <div style="width: 25%; text-align: center;">
-                <span class="category-badge">{course['category']}</span>
+                <span class="category-badge">{category}</span>
             </div>
             <div style="width: 25%; text-align: center;">
                 <div class="status-indicator" style="justify-content: center;">
                     <span class="status-dot"></span>
-                    <span style="color: #6B7280; font-size: 16px;">{course['status']}</span>
+                    <span style="color: #6B7280; font-size: 16px;">{status}</span>
                 </div>
             </div>
             <div style="width: 25%; text-align: center; color: #2E2E2E; font-size: 16px;">
-                {course['type']}
+                {course_type}
             </div>
         </div>
         """, unsafe_allow_html=True)
+    
+    if not courses:
+        st.info("No courses found")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -438,17 +469,29 @@ with col_detail:
     # Course image placeholder
     st.markdown('<div class="course-image"></div>', unsafe_allow_html=True)
     
-    # Course details
-    detail_col1, detail_col2 = st.columns(2)
-    with detail_col1:
-        st.markdown('<div class="detail-row"><strong>Name:</strong> UI/UX</div>', unsafe_allow_html=True)
-        st.markdown('<div class="detail-row"><strong>Category:</strong> Skills</div>', unsafe_allow_html=True)
-        st.markdown('<div class="detail-row"><strong>Type:</strong> External</div>', unsafe_allow_html=True)
-    
-    with detail_col2:
-        st.markdown('<div class="detail-row"><strong>Cohort:</strong> UIX07</div>', unsafe_allow_html=True)
-        st.markdown('<div class="detail-row"><strong>Status:</strong> Ongoing</div>', unsafe_allow_html=True)
-        st.markdown('<div class="detail-row"><strong>Price:</strong> 1,000$</div>', unsafe_allow_html=True)
+    # Course details from first course or selected
+    if courses:
+        course = courses[0]
+        course_name = course.get('title', course.get('name', 'N/A'))
+        category = course.get('category', 'N/A')
+        course_type = course.get('type', 'N/A')
+        status = course.get('status', 'N/A')
+        price = course.get('price', 0)
+        instructor = course.get('instructor', 'N/A')
+        
+        # Course details
+        detail_col1, detail_col2 = st.columns(2)
+        with detail_col1:
+            st.markdown(f'<div class="detail-row"><strong>Name:</strong> {course_name}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="detail-row"><strong>Category:</strong> {category}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="detail-row"><strong>Type:</strong> {course_type}</div>', unsafe_allow_html=True)
+        
+        with detail_col2:
+            st.markdown(f'<div class="detail-row"><strong>Instructor:</strong> {instructor}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="detail-row"><strong>Status:</strong> {status}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="detail-row"><strong>Price:</strong> ${price:,.2f}</div>', unsafe_allow_html=True)
+    else:
+        st.info("Select a course to view details")
     
     st.markdown('<div style="margin-top: 40px;"></div>', unsafe_allow_html=True)
     

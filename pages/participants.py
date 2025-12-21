@@ -1,8 +1,23 @@
 import streamlit as st
 import plotly.graph_objects as go
+import sys
+import os
+
+# Add parent directory to path to import api_client
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api_client import APIClient
 
 # Page config
 st.set_page_config(page_title="Participants", page_icon="👥", layout="wide")
+
+# Initialize API client
+if 'api_client' not in st.session_state:
+    st.session_state.api_client = APIClient()
+
+# Check if user is logged in
+if 'access_token' not in st.session_state:
+    st.warning("Please login to access participants")
+    st.switch_page("pages/login.py")
 
 # Custom CSS for styling
 st.markdown("""
@@ -188,13 +203,14 @@ st.markdown("""
     }
     
     .table-header {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 2fr 1fr 1.5fr 1fr;
         align-items: center;
-        padding: 0px 21px 0px 33px;
+        padding: 0px 33px;
         height: 65px;
         border-top: 1px solid #EBE6E6;
         border-bottom: 1px solid #EBE6E6;
+        gap: 20px;
     }
     
     .table-header-text {
@@ -204,11 +220,12 @@ st.markdown("""
     }
     
     .table-row {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 2fr 1fr 1.5fr 1fr;
         align-items: center;
         padding: 0px 33px;
         height: 65px;
+        gap: 20px;
     }
     
     .table-row.selected {
@@ -548,60 +565,78 @@ with table_col:
     st.markdown("""
     <div class="table-header">
         <div class="table-header-text">Participants</div>
-        <div style="display: flex; gap: 87px;">
-            <div class="table-header-text">Status</div>
-            <div class="table-header-text">Course</div>
-            <div class="table-header-text">Type</div>
-        </div>
+        <div class="table-header-text">Status</div>
+        <div class="table-header-text">Course</div>
+        <div class="table-header-text">Type</div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Sample participants
-    participants_data = [
-        {"name": "Ahmad", "status": "Accepted", "status_color": "accepted", "course": "UI/UX", "type": "External", "cohort": "UIX07", "course_status": "Ongoing", "payment": "Completed"},
-        {"name": "Sarah Johnson", "status": "Pending", "status_color": "pending", "course": "Web Development", "type": "External", "cohort": "WEB12", "course_status": "Pending", "payment": "Pending"},
-        {"name": "Michael Chen", "status": "Accepted", "status_color": "accepted", "course": "Data Science", "type": "Internal", "cohort": "DS05", "course_status": "Completed", "payment": "Completed"},
-        {"name": "Emily Rodriguez", "status": "Accepted", "status_color": "accepted", "course": "UI/UX", "type": "External", "cohort": "UIX08", "course_status": "Ongoing", "payment": "Completed"},
-        {"name": "David Kim", "status": "Pending", "status_color": "pending", "course": "Marketing", "type": "External", "cohort": "MKT03", "course_status": "Pending", "payment": "Pending"},
-    ]
+    # Fetch participants from API
+    with st.spinner("Loading participants..."):
+        participants_data_response = st.session_state.api_client.get_participants()
+    
+    # Check for errors
+    if "error" in participants_data_response:
+        st.error(f"Failed to load participants: {participants_data_response['error']}")
+        participants_data = []
+    else:
+        # Extract participants array from paginated response
+        participants_data = participants_data_response.get('participants', [])
     
     # Selected participant (first one by default)
-    selected_participant = participants_data[0]
+    selected_participant = participants_data[0] if participants_data else None
     
     for i, participant in enumerate(participants_data):
         selected_class = "selected" if i == 0 else ""
+        name = participant.get('name', 'N/A')
+        status = participant.get('status', 'Pending')
+        status_color = status.lower().replace(' ', '_')
+        course = participant.get('course_name', 'N/A')
+        participant_type = participant.get('type', 'N/A')
+        
         st.markdown(f"""
         <div class="table-row {selected_class}">
             <div class="participant-info">
                 <div class="participant-avatar">👤</div>
-                <div class="participant-name">{participant['name']}</div>
+                <div class="participant-name">{name}</div>
             </div>
-            <div style="display: flex; gap: 64px;">
-                <div class="status-{participant['status_color']}">{participant['status']}</div>
-                <div class="participant-name">{participant['course']}</div>
-                <div class="participant-name">{participant['type']}</div>
-            </div>
+            <div class="status-{status_color}">{status}</div>
+            <div class="participant-name">{course}</div>
+            <div class="participant-name">{participant_type}</div>
         </div>
         """, unsafe_allow_html=True)
+    
+    if not participants_data:
+        st.info("No participants found")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
 with detail_col:
-    st.markdown(f"""
-    <div class="detail-panel">
-        <div class="detail-header">
-            <div class="detail-avatar">👤</div>
-            <div class="detail-name">{selected_participant['name']}</div>
-        </div>
+    if selected_participant:
+        name = selected_participant.get('name', 'N/A')
+        course = selected_participant.get('course_name', 'N/A')
+        cohort = selected_participant.get('cohort_name', 'N/A')
+        participant_type = selected_participant.get('type', 'N/A')
+        course_status = selected_participant.get('course_status', 'N/A')
+        payment_status = selected_participant.get('payment_status', 'N/A')
         
-        <div class="detail-info">
-            <div class="detail-item">Course: {selected_participant['course']}</div>
-            <div class="detail-item">Cohort: {selected_participant['cohort']}</div>
-            <div class="detail-item">Participant Type: {selected_participant['type']}</div>
-            <div class="detail-item">Course Status: {selected_participant['course_status']}</div>
-            <div class="detail-item">Payment Status: {selected_participant['payment']}</div>
+        st.markdown(f"""
+        <div class="detail-panel">
+            <div class="detail-header">
+                <div class="detail-avatar">👤</div>
+                <div class="detail-name">{name}</div>
+            </div>
+            
+            <div class="detail-info">
+                <div class="detail-item">Course: {course}</div>
+                <div class="detail-item">Cohort: {cohort}</div>
+                <div class="detail-item">Participant Type: {participant_type}</div>
+                <div class="detail-item">Course Status: {course_status}</div>
+                <div class="detail-item">Payment Status: {payment_status}</div>
+            </div>
+            
+            <div class="detail-button">View More Details</div>
         </div>
-        
-        <div class="detail-button">View More Details</div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    else:
+        st.info("No participant selected")

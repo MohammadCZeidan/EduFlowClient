@@ -4,8 +4,23 @@ from datetime import datetime, timedelta
 import plotly.graph_objects as go
 import plotly.express as px
 import calendar
+import sys
+import os
+
+# Add parent directory to path to import api_client
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api_client import APIClient
 
 st.set_page_config(page_title="EduFlow Dashboard", layout="wide")
+
+# Initialize API client
+if 'api_client' not in st.session_state:
+    st.session_state.api_client = APIClient()
+
+# Check if user is logged in
+if 'access_token' not in st.session_state:
+    st.warning("Please login to access the dashboard")
+    st.switch_page("pages/login.py")
 
 # Enhanced Custom CSS matching Figma design
 st.markdown("""
@@ -278,44 +293,73 @@ with st.sidebar:
         st.switch_page("Home.py")
 
 # Main Dashboard Content
-st.markdown('<h2 style="color: #2E2E2E; margin-bottom: 30px;">Hello, User\'s Name</h2>', unsafe_allow_html=True)
+# Get user info and metrics from API
+user_name = st.session_state.get('user', {}).get('full_name', "User")
+st.markdown(f'<h2 style="color: #2E2E2E; margin-bottom: 30px;">Hello, {user_name}</h2>', unsafe_allow_html=True)
+
+# Fetch metrics from API
+with st.spinner("Loading dashboard metrics..."):
+    metrics = st.session_state.api_client.get_metrics_summary()
+
+# Check for errors
+if "error" in metrics:
+    st.error(f"Failed to load metrics: {metrics['error']}")
+    # Use default values as fallback
+    total_courses = 0
+    total_registrations = 0
+    total_employees = 0
+    total_participants = 0
+    total_revenue = 0
+    payments_collected = 0
+    payments_pending = 0
+    completion_rate = 0
+else:
+    # Extract metrics from API response
+    total_courses = metrics.get('total_courses', 0)
+    total_registrations = metrics.get('total_registered', 0)
+    total_employees = metrics.get('total_employees', 0)
+    total_participants = metrics.get('total_participants', 0)
+    total_revenue = metrics.get('total_revenue', 0)
+    payments_collected = metrics.get('total_paid', 0)
+    payments_pending = metrics.get('total_pending', 0)
+    completion_rate = metrics.get('completion_rate', 0) or 0
 
 # ===== METRICS ROW 1 (4 columns) =====
 st.markdown('<div style="margin-bottom: 16px;"></div>', unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4, gap="small")
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">📚</div>
-        <div class="metric-value">100</div>
+        <div class="metric-value">{total_courses}</div>
         <div class="metric-label">Total Courses</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">📝</div>
-        <div class="metric-value">1,000</div>
+        <div class="metric-value">{total_registrations:,}</div>
         <div class="metric-label">Total Registration</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">👥</div>
-        <div class="metric-value">20</div>
+        <div class="metric-value">{total_employees}</div>
         <div class="metric-label">Total Employees</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">👤</div>
-        <div class="metric-value">50</div>
+        <div class="metric-value">{total_participants}</div>
         <div class="metric-label">Total Participants</div>
     </div>
     """, unsafe_allow_html=True)
@@ -325,37 +369,37 @@ st.markdown('<div style="margin-bottom: 16px;"></div>', unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4, gap="small")
 
 with col1:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">💰</div>
-        <div class="metric-value">2,000$</div>
+        <div class="metric-value">${total_revenue:,.2f}</div>
         <div class="metric-label">Total Revenue</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">✅</div>
-        <div class="metric-value">2,000$</div>
+        <div class="metric-value">${payments_collected:,.2f}</div>
         <div class="metric-label">Payments Collected</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">⏳</div>
-        <div class="metric-value">2,000$</div>
+        <div class="metric-value">${payments_pending:,.2f}</div>
         <div class="metric-label">Payments Pending</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
-    st.markdown("""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="icon-box">⏱️</div>
-        <div class="metric-value">75%</div>
+        <div class="metric-value">{completion_rate:.0f}%</div>
         <div class="metric-label">Courses Completion Rate</div>
     </div>
     """, unsafe_allow_html=True)

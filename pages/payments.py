@@ -1,7 +1,22 @@
 import streamlit as st
+import sys
+import os
+
+# Add parent directory to path to import api_client
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api_client import APIClient
 
 # Page config
 st.set_page_config(page_title="Payment", page_icon="💰", layout="wide")
+
+# Initialize API client
+if 'api_client' not in st.session_state:
+    st.session_state.api_client = APIClient()
+
+# Check if user is logged in
+if 'access_token' not in st.session_state:
+    st.warning("Please login to access payments")
+    st.switch_page("pages/login.py")
 
 # Custom CSS for styling
 st.markdown("""
@@ -393,48 +408,72 @@ with table_col:
     </div>
     """, unsafe_allow_html=True)
     
-    # Sample payment data
-    payments_data = [
-        {"name": "Participant's name", "payment": "Completed", "payment_color": "completed", "course": "UI/UX", "type": "External"},
-        {"name": "Participant's name", "payment": "Pending", "payment_color": "pending", "course": "UI/UX", "type": "External"},
-        {"name": "Participant's name", "payment": "Overdue", "payment_color": "overdue", "course": "UI/UX", "type": "External"},
-        {"name": "Participant's name", "payment": "Pending", "payment_color": "pending", "course": "UI/UX", "type": "External"},
-        {"name": "Participant's name", "payment": "Pending", "payment_color": "pending", "course": "UI/UX", "type": "External"},
-    ]
+    # Fetch payments from API
+    with st.spinner("Loading payments..."):
+        payments_response = st.session_state.api_client.get_payments()
     
-    for payment in payments_data:
+    # Check for errors
+    if "error" in payments_response:
+        st.error(f"Failed to load payments: {payments_response['error']}")
+        payments_data = []
+    else:
+        # Extract payments array from paginated response
+        payments_data = payments_response.get('payments', [])
+    
+    # Selected payment (first one by default)
+    selected_payment = payments_data[0] if payments_data else None
+    
+    for i, payment in enumerate(payments_data):
+        selected_class = "selected" if i == 0 else ""
+        name = payment.get('user_name', 'N/A')
+        payment_status = payment.get('status', 'Pending')
+        payment_color = payment_status.lower().replace(' ', '_')
+        course = payment.get('course_name', 'N/A')
+        participant_type = payment.get('type', 'N/A')
+        
         st.markdown(f"""
-        <div class="table-row">
+        <div class="table-row {selected_class}">
             <div class="participant-info">
                 <div class="participant-avatar">👤</div>
-                <div class="participant-name">{payment['name']}</div>
+                <div class="participant-name">{name}</div>
             </div>
             <div style="display: flex; gap: 64px;">
-                <div class="payment-{payment['payment_color']}">{payment['payment']}</div>
-                <div class="participant-name">{payment['course']}</div>
-                <div class="participant-name">{payment['type']}</div>
+                <div class="payment-{payment_color}">{payment_status}</div>
+                <div class="participant-name">{course}</div>
+                <div class="participant-name">{participant_type}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
+    if not payments_data:
+        st.info("No payments found")
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 with detail_col:
-    st.markdown("""
-    <div class="detail-panel">
-        <div class="detail-header">
-            <div class="detail-avatar">👤</div>
-            <div class="detail-name">Participant's Name</div>
-        </div>
+    if selected_payment:
+        name = selected_payment.get('user_name', 'N/A')
+        course = selected_payment.get('course_name', 'N/A')
+        cohort = selected_payment.get('cohort_name', 'N/A')
+        payment_status = selected_payment.get('status', 'N/A')
+        amount = selected_payment.get('amount', 0)
         
-        <div class="detail-info">
-            <div class="detail-item">Course: UI/UX</div>
-            <div class="detail-item">Cohort: UIX07</div>
-            <div class="detail-item">Participant Type: External</div>
-            <div class="detail-item">Course Status: Ongoing</div>
-            <div class="detail-item">Payment Status: Completed</div>
+        st.markdown(f"""
+        <div class="detail-panel">
+            <div class="detail-header">
+                <div class="detail-avatar">👤</div>
+                <div class="detail-name">{name}</div>
+            </div>
+            
+            <div class="detail-info">
+                <div class="detail-item">Course: {course}</div>
+                <div class="detail-item">Cohort: {cohort}</div>
+                <div class="detail-item">Amount: ${amount:,.2f}</div>
+                <div class="detail-item">Payment Status: {payment_status}</div>
+            </div>
+            
+            <div class="detail-button">View More Details</div>
         </div>
-        
-        <div class="detail-button">View More Details</div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    else:
+        st.info("No payment selected")

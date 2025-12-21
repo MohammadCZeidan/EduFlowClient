@@ -1,7 +1,17 @@
 import streamlit as st
 from PIL import Image
+import sys
+import os
+
+# Add parent directory to path to import api_client
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api_client import APIClient
 
 st.set_page_config(page_title="EduFlow - Login", layout="centered", initial_sidebar_state="collapsed")
+
+# Initialize API client
+if 'api_client' not in st.session_state:
+    st.session_state.api_client = APIClient()
 
 # Custom CSS matching Figma design exactly
 st.markdown("""
@@ -238,7 +248,17 @@ with col2:
     # Login button
     if st.button("Login", use_container_width=True):
         if email and password:
-            st.success("Login successful!")
-            st.switch_page("pages/dashboard.py")
+            # Call API to authenticate
+            with st.spinner("Logging in..."):
+                result = st.session_state.api_client.login(email, password)
+                
+            if "error" in result:
+                st.error(f"Login failed: {result['error']}")
+            elif "access_token" in result:
+                st.success("Login successful!")
+                # Token is automatically stored in session_state by api_client
+                st.switch_page("pages/dashboard.py")
+            else:
+                st.error("Unexpected response from server")
         else:
             st.error("Please enter both email and password")

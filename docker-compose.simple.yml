@@ -1,0 +1,25 @@
+# Simple Docker Compose - Frontend Only
+# Use this if backend is already running locally
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eduflow-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8000}
+    volumes:
+      - ./assets:/app/assets:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

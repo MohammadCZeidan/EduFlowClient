@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # EduFlow Frontend (Streamlit Dashboard)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eduflow-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    volumes:
+      - ./assets:/app/assets:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - eduflow-network
+
+  # EduFlow Backend (FastAPI)
+  backend:
+    build:
+      context: ../eduflowServer/backend
+      dockerfile: Dockerfile
+    container_name: eduflow-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+      - AIRTABLE_TABLE_COURSES=${AIRTABLE_TABLE_COURSES:-Courses}
+      - AIRTABLE_TABLE_COHORTS=${AIRTABLE_TABLE_COHORTS:-Cohorts}
+      - AIRTABLE_TABLE_PARTICIPANTS=${AIRTABLE_TABLE_PARTICIPANTS:-Participants}
+      - AIRTABLE_TABLE_PAYMENTS=${AIRTABLE_TABLE_PAYMENTS:-Payments}
+      - AIRTABLE_TABLE_USERS=${AIRTABLE_TABLE_USERS:-Users}
+      - AIRTABLE_TABLE_SCHEDULES=${AIRTABLE_TABLE_SCHEDULES:-Schedules}
+      - AIRTABLE_TABLE_REGISTRATIONS=${AIRTABLE_TABLE_REGISTRATIONS:-Registrations}
+      - AIRTABLE_TABLE_EMPLOYEES=${AIRTABLE_TABLE_EMPLOYEES:-Employees}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRES_MINUTES=${JWT_EXPIRES_MINUTES:-10080}
+      - CORS_ORIGINS=http://localhost:8501,http://frontend:8501
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PORT=8000
+    env_file:
+      - ../eduflowServer/backend/.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - eduflow-network
+
+  # n8n Automation (Optional - for Google Drive integration)
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: eduflow-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin123}
+      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../eduflowServer/n8n/workflows:/workflows:ro
+    restart: unless-stopped
+    profiles:
+      - full  # Only start with: docker-compose --profile full up
+    networks:
+      - eduflow-network
+
+volumes:
+  n8n_data:
+
+networks:
+  eduflow-network:
+    driver: bridge

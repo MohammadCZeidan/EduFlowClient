@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import api_client
+sys.path.append(str(Path(__file__).parent.parent))
+from api_client import get_api_client
 
 # Page config
 st.set_page_config(page_title="Admin", page_icon="👥", layout="wide")
@@ -384,85 +390,68 @@ with header_col2:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Table container
-st.markdown('<div class="table-container">', unsafe_allow_html=True)
+# Get API client
+api_client = get_api_client()
 
 # Filter bar
 filter_col1, filter_col2 = st.columns([0.15, 1])
 
 with filter_col1:
-    st.selectbox("Role", ["All Roles", "Admin", "Manager", "Instructor"], key="role_filter", label_visibility="collapsed")
+    role_filter = st.selectbox("Role", ["All Roles", "HR", "IT", "Admin", "Finance"], key="role_filter", label_visibility="collapsed")
 
 with filter_col2:
-    st.text_input("Search", placeholder="Search....", key="search", label_visibility="collapsed")
+    search_filter = st.text_input("Search", placeholder="Search....", key="search", label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Table header
 st.markdown("""
 <div class="table-header">
-    <div class="table-header-text">Users</div>
-    <div class="table-header-text">Role</div>
+    <div class="table-header-text" style="flex: 4; margin-left: 17px;">Users</div>
+    <div class="table-header-text" style="flex: 1;">Role</div>
+    <div style="flex: 0.2;"></div>
 </div>
 """, unsafe_allow_html=True)
 
-# Sample user data
-users_data = [
-    {"id": "1", "name": "Sarah Johnson", "role": "HR"},
-    {"id": "2", "name": "Michael Chen", "role": "HR"},
-    {"id": "3", "name": "Emily Rodriguez", "role": "HR"},
-    {"id": "4", "name": "David Kim", "role": "IT"},
-    {"id": "5", "name": "Jessica Martinez", "role": "HR"},
-    {"id": "6", "name": "Robert Brown", "role": "HR"},
-    {"id": "7", "name": "Amanda Wilson", "role": "HR"},
-]
+# Fetch users from API
+users_response = api_client.get_users(role=role_filter if role_filter != "All Roles" else None, 
+                                     search=search_filter if search_filter else None)
 
-for idx, user in enumerate(users_data):
-    col1, col2, col3 = st.columns([2, 1, 0.2])
-    
-    with col1:
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 16px; padding: 20px 0;">
-            <div class="user-avatar">👤</div>
-            <div class="user-name">{user['name']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div style="padding: 20px 0;">
-            <div class="user-role">{user['role']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        with st.popover("︙"):
-            if st.button("👁️ View", key=f"view_{user['id']}", use_container_width=True):
-                st.query_params.update({"id": user['id'], "name": user['name'], "role": user['role']})
-                st.switch_page("pages/user_details.py")
-            
-            if st.button("🗑️ Delete", key=f"delete_{user['id']}", use_container_width=True):
-                st.session_state[f"delete_confirm_{user['id']}"] = True
-                st.rerun()
+if "error" in users_response:
+    st.error(f"Failed to load users: {users_response['error']}")
+    users_data = []
+else:
+    users_data = users_response.get("users", [])
 
-# Delete confirmation dialogs
-for user in users_data:
-    if f"delete_confirm_{user['id']}" in st.session_state and st.session_state[f"delete_confirm_{user['id']}"]:
-        st.warning(f"⚠️ Are you sure you want to delete **{user['name']}**? This action cannot be undone.")
-        
-        col1, col2, col3 = st.columns([1, 1, 3])
+if not users_data:
+    st.info("No users found.")
+else:
+    for idx, user in enumerate(users_data):
+        col1, col2, col3 = st.columns([2, 1, 0.2])
         
         with col1:
-            if st.button("Confirm Delete", key=f"confirm_delete_{user['id']}", use_container_width=True):
-                st.success(f"User {user['name']} deleted successfully!")
-                st.session_state[f"delete_confirm_{user['id']}"] = False
-                st.rerun()
+            st.markdown(f"""
+            <div style="display: flex; align-items: center; gap: 16px; padding: 20px 0;">
+                <div class="user-avatar">👤</div>
+                <div class="user-name">{user.get('full_name', user.get('name', 'Unknown'))}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with col2:
-            if st.button("Cancel", key=f"cancel_delete_{user['id']}", use_container_width=True):
-                st.session_state[f"delete_confirm_{user['id']}"] = False
-                st.rerun()
+            st.markdown(f"""
+            <div style="padding: 20px 0;">
+                <div class="user-role">{user.get('role', 'N/A').upper()}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        break  # Only show one confirmation at a time
+        with col3:
+            if st.button(" Delete", key=f"delete_{user.get('id', idx)}", use_container_width=True):
+                # Call API to delete user
+                delete_response = api_client.delete_user(user.get('id'))
+                if "error" in delete_response:
+                    st.error(f"Failed to delete user: {delete_response['error']}")
+                else:
+                    st.success(f"User {user.get('full_name', 'Unknown')} deleted successfully!")
+                    st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)

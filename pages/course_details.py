@@ -130,17 +130,12 @@ with st.sidebar:
 # Main Content
 col_back, col_title = st.columns([0.5, 5])
 with col_back:
-    if st.button("← Back"):
+    if st.button(" ← "):
         st.switch_page("pages/courses.py")
 with col_title:
     st.markdown('<h2 style="color: #2E2E2E; margin-bottom: 30px;">Course Details</h2>', unsafe_allow_html=True)
 
-st.markdown('<div class="detail-container">', unsafe_allow_html=True)
 
-# Course Image
-st.markdown("""
-<div style="width: 100%; max-width: 600px; height: 300px; background: #D8D7D7; border-radius: 15px; margin-bottom: 40px;"></div>
-""", unsafe_allow_html=True)
 
 # Course Details
 col1, col2 = st.columns(2)
@@ -208,7 +203,7 @@ st.markdown('<div style="margin-top: 40px;"></div>', unsafe_allow_html=True)
 
 col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 3])
 with col_btn1:
-    if st.button("Edit Course", type="primary", use_container_width=True):
+    if st.button("Edit Course", use_container_width=True):
         st.info("Edit functionality coming soon!")
 
 with col_btn2:
