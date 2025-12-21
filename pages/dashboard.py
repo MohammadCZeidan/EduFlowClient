@@ -18,6 +18,68 @@ st.markdown("""
             background-color: #f7f8fa !important;
         }
         
+        /* Sidebar styling */
+        [data-testid="stSidebar"] {
+            background-color: white !important;
+            padding: 0 !important;
+            max-width: 280px !important;
+            min-width: 280px !important;
+            width: 280px !important;
+        }
+        
+        [data-testid="stSidebar"] > div:first-child {
+            width: 280px !important;
+        }
+        
+        /* Force sidebar to always be open and prevent collapse */
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            margin-left: 0 !important;
+        }
+        
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        section[data-testid="stSidebar"] {
+            position: relative !important;
+            transform: none !important;
+            margin-left: 0 !important;
+            max-width: 280px !important;
+            width: 280px !important;
+        }
+        
+        section[data-testid="stSidebar"] > div {
+            transform: none !important;
+            position: relative !important;
+            width: 280px !important;
+        }
+        
+        /* Sidebar button styling */
+        .stButton > button {
+            width: 100%;
+            border-radius: 8px;
+            padding: 10px 10px;
+            font-size: 16px;
+            font-weight: 400;
+            border: none;
+            background-color: transparent;
+            color: #2E2E2E;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stButton > button:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .stButton > button[kind="primary"] {
+            background-color: #E8E6FF !important;
+            color: #51287E !important;
+            border-left: 2px solid #51287E !important;
+        }
+        
         .metric-card {
             background: white;
             padding: 20px;
@@ -211,10 +273,9 @@ with st.sidebar:
         st.switch_page("pages/admin.py")
     
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("---")
     
-    if st.button("🚪  Logout", key="logout"):
-        st.switch_page("pages/login.py")
+    if st.button("🚪  Logout", key="nav_logout", use_container_width=True):
+        st.switch_page("Home.py")
 
 # Main Dashboard Content
 st.markdown('<h2 style="color: #2E2E2E; margin-bottom: 30px;">Hello, User\'s Name</h2>', unsafe_allow_html=True)
@@ -304,7 +365,6 @@ st.markdown('<div style="margin-bottom: 16px;"></div>', unsafe_allow_html=True)
 col_chart, col_courses = st.columns([1.5, 0.8], gap="medium")
 
 with col_chart:
-    st.markdown('<div class="chart-container">', unsafe_allow_html=True)
     st.markdown('<p class="section-title">Registrations per week</p>', unsafe_allow_html=True)
     
     weeks = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']

@@ -10,8 +10,8 @@ st.markdown("""
         .main-title { font-size: 3.5em; font-weight: 700; margin-bottom: 0.3em; color: #1a1a1a; }
         .subtitle { font-size: 1.1em; color: #666; margin-bottom: 2.5em; line-height: 1.6; }
         .cta-btn {
-            background: #6C4FF7;
-            color: white;
+            background: #51287E;
+            color: #FFFFFF;
             border: none;
             border-radius: 25px;
             padding: 0.75em 2.2em;
@@ -23,7 +23,7 @@ st.markdown("""
         }
         .cta-btn-outline {
             background: white;
-            color: #6C4FF7;
+            color: #51287E;
             border: 2px solid #6C4FF7;
             border-radius: 25px;
             padding: 0.75em 2.2em;

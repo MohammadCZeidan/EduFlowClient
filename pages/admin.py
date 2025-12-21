@@ -43,6 +43,14 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    .stTextInput > div {
+        background: white !important;
+    }
+    
+    .stTextInput > div > div {
+        background: white !important;
+    }
+    
     .stTextInput > div > div > input {
         background: white !important;
         color: #000000 !important;
@@ -55,14 +63,44 @@ st.markdown("""
     /* Sidebar styling */
     [data-testid="stSidebar"] {
         background-color: white !important;
-        padding: 35px 30px 50px !important;
+        padding: 0 !important;
+        max-width: 280px !important;
+        min-width: 280px !important;
+        width: 280px !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        width: 280px !important;
+    }
+    
+    /* Force sidebar to always be open and prevent collapse */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        margin-left: 0 !important;
+    }
+    
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    
+    section[data-testid="stSidebar"] {
+        position: relative !important;
+        transform: none !important;
+        margin-left: 0 !important;
+        max-width: 280px !important;
+        width: 280px !important;
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        transform: none !important;
+        position: relative !important;
+        width: 280px !important;
     }
     
     /* Sidebar button styling */
     .stButton > button {
         width: 100%;
         border-radius: 8px;
-        padding: 10px 20px;
+        padding: 10px 10px;
         font-size: 16px;
         font-weight: 400;
         border: none;
@@ -118,6 +156,85 @@ st.markdown("""
         text-align: center !important;
         justify-content: center !important;
         border-left: 1px solid #51287E !important;
+    }
+    
+    /* Menu dots button styling */
+    .stPopover > button {
+        background: white !important;
+        border: none !important;
+        color: #2E2E2E !important;
+        font-size: 20px !important;
+        padding: 4px 8px !important;
+        min-width: auto !important;
+        height: 32px !important;
+    }
+    
+    .stPopover > button:hover {
+        background: white !important;
+    }
+    
+    /* Force white background on all button states */
+    .stPopover button[data-testid="baseButton-header"] {
+        background-color: white !important;
+        background: white !important;
+        color: #2E2E2E !important;
+        border: none !important;
+        padding: 4px 8px !important;
+    }
+    
+    .stPopover button[data-testid="baseButton-header"]:hover {
+        background-color: white !important;
+        background: white !important;
+    }
+    
+    .stPopover button[data-testid="baseButton-header"]:active {
+        background-color: white !important;
+        background: white !important;
+    }
+    
+    .stPopover button[data-testid="baseButton-header"]:focus {
+        background-color: white !important;
+        background: white !important;
+    }
+    
+    /* Popover menu styling */
+    [data-baseweb="popover"] {
+        background: white !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
+    
+    .menu-option-btn {
+        background: white !important;
+        border: none !important;
+        color: #2E2E2E !important;
+        text-align: left !important;
+        padding: 8px 16px !important;
+        width: 120px !important;
+        font-size: 15px !important;
+    }
+    
+    .menu-option-btn:hover {
+        background: #f5f5f5 !important;
+    }
+    
+    .delete-option-btn {
+        color: #D14540 !important;
+    }
+    
+    /* Style buttons inside popover */
+    .stPopover .stButton > button {
+        background: white !important;
+        color: #2E2E2E !important;
+        border: none !important;
+        text-align: left !important;
+        padding: 8px 16px !important;
+        width: 100% !important;
+        border-radius: 4px !important;
+    }
+    
+    .stPopover .stButton > button:hover {
+        background: #f5f5f5 !important;
     }
     
     /* Table container */
@@ -250,6 +367,11 @@ with st.sidebar:
     
     if st.button("👤 Admin", key="nav_admin", type="primary", use_container_width=True):
         st.switch_page("pages/admin.py")
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    if st.button("🚪 Logout", key="nav_logout", use_container_width=True):
+        st.switch_page("Home.py")
 
 # Main content
 # Header section
@@ -286,31 +408,61 @@ st.markdown("""
 
 # Sample user data
 users_data = [
-    {"name": "User's name", "role": "HR"},
-    {"name": "User's name", "role": "HR"},
-    {"name": "User's name", "role": "HR"},
-    {"name": "User's name", "role": "IT"},
-    {"name": "User's name", "role": "HR"},
-    {"name": "User's name", "role": "HR"},
-    {"name": "User's name", "role": "HR"},
+    {"id": "1", "name": "Sarah Johnson", "role": "HR"},
+    {"id": "2", "name": "Michael Chen", "role": "HR"},
+    {"id": "3", "name": "Emily Rodriguez", "role": "HR"},
+    {"id": "4", "name": "David Kim", "role": "IT"},
+    {"id": "5", "name": "Jessica Martinez", "role": "HR"},
+    {"id": "6", "name": "Robert Brown", "role": "HR"},
+    {"id": "7", "name": "Amanda Wilson", "role": "HR"},
 ]
 
-for user in users_data:
-    st.markdown(f"""
-    <div class="table-row">
-        <div class="user-info">
+for idx, user in enumerate(users_data):
+    col1, col2, col3 = st.columns([2, 1, 0.2])
+    
+    with col1:
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 16px; padding: 20px 0;">
             <div class="user-avatar">👤</div>
             <div class="user-name">{user['name']}</div>
         </div>
-        <div style="display: flex; gap: 252px; align-items: center;">
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div style="padding: 20px 0;">
             <div class="user-role">{user['role']}</div>
-            <div class="menu-dots">
-                <div class="menu-dot"></div>
-                <div class="menu-dot"></div>
-                <div class="menu-dot"></div>
-            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        with st.popover("︙"):
+            if st.button("👁️ View", key=f"view_{user['id']}", use_container_width=True):
+                st.query_params.update({"id": user['id'], "name": user['name'], "role": user['role']})
+                st.switch_page("pages/user_details.py")
+            
+            if st.button("🗑️ Delete", key=f"delete_{user['id']}", use_container_width=True):
+                st.session_state[f"delete_confirm_{user['id']}"] = True
+                st.rerun()
+
+# Delete confirmation dialogs
+for user in users_data:
+    if f"delete_confirm_{user['id']}" in st.session_state and st.session_state[f"delete_confirm_{user['id']}"]:
+        st.warning(f"⚠️ Are you sure you want to delete **{user['name']}**? This action cannot be undone.")
+        
+        col1, col2, col3 = st.columns([1, 1, 3])
+        
+        with col1:
+            if st.button("Confirm Delete", key=f"confirm_delete_{user['id']}", use_container_width=True):
+                st.success(f"User {user['name']} deleted successfully!")
+                st.session_state[f"delete_confirm_{user['id']}"] = False
+                st.rerun()
+        
+        with col2:
+            if st.button("Cancel", key=f"cancel_delete_{user['id']}", use_container_width=True):
+                st.session_state[f"delete_confirm_{user['id']}"] = False
+                st.rerun()
+        
+        break  # Only show one confirmation at a time
 
 st.markdown('</div>', unsafe_allow_html=True)

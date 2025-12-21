@@ -13,33 +13,66 @@ st.markdown("""
             background-color: #f7f8fa !important;
         }
         
+        /* Sidebar styling */
         [data-testid="stSidebar"] {
             background-color: white !important;
+            padding: 0 !important;
+            max-width: 280px !important;
+            min-width: 280px !important;
+            width: 280px !important;
+        }
+        
+        [data-testid="stSidebar"] > div:first-child {
+            width: 280px !important;
+        }
+        
+        /* Force sidebar to always be open and prevent collapse */
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            margin-left: 0 !important;
+        }
+        
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        section[data-testid="stSidebar"] {
+            position: relative !important;
+            transform: none !important;
+            margin-left: 0 !important;
+            max-width: 280px !important;
+            width: 280px !important;
+        }
+        
+        section[data-testid="stSidebar"] > div {
+            transform: none !important;
+            position: relative !important;
+            width: 280px !important;
         }
         
         /* Sidebar button styling */
-        [data-testid="stSidebar"] [data-testid="stButton"] button {
-            background: transparent !important;
-            border: none !important;
-            color: #2E2E2E !important;
-            text-align: left !important;
-            padding: 10px 20px !important;
-            font-size: 16px !important;
-            font-weight: 400 !important;
-            border-radius: 0 !important;
-            width: 100% !important;
-            margin-bottom: 0px !important;
+        .stButton > button {
+            width: 100%;
+            border-radius: 8px;
+            padding: 10px 10px;
+            font-size: 16px;
+            font-weight: 400;
+            border: none;
+            background-color: transparent;
+            color: #2E2E2E;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
-        [data-testid="stSidebar"] [data-testid="stButton"] button:hover {
-            background: #f5f5f5 !important;
+        .stButton > button:hover {
+            background-color: #f5f5f5;
         }
         
-        [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
-            background: #E8E6FF !important;
-            border-left: 2px solid #51287E !important;
+        .stButton > button[kind="primary"] {
+            background-color: #E8E6FF !important;
             color: #51287E !important;
-            font-weight: 400 !important;
+            border-left: 2px solid #51287E !important;
         }
         
         .detail-container {
@@ -86,14 +119,13 @@ with st.sidebar:
     if st.button("💳  Payments", key="nav_payments", use_container_width=True):
         st.switch_page("pages/payments.py")
     
-    if st.button("👤  Employees", key="nav_employees", use_container_width=True):
-        st.switch_page("pages/employees.py")
+    if st.button("👤  Admin", key="nav_admin", use_container_width=True):
+        st.switch_page("pages/admin.py")
     
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("---")
     
-    if st.button("🚪  Logout", key="logout"):
-        st.switch_page("pages/login.py")
+    if st.button("🚪  Logout", key="nav_logout", use_container_width=True):
+        st.switch_page("Home.py")
 
 # Main Content
 col_back, col_title = st.columns([0.5, 5])

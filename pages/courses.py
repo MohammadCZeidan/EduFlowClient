@@ -14,33 +14,106 @@ st.markdown("""
             background-color: #f7f8fa !important;
         }
         
+        /* Sidebar styling */
         [data-testid="stSidebar"] {
             background-color: white !important;
+            padding: 0 !important;
+            max-width: 280px !important;
+            min-width: 280px !important;
+            width: 280px !important;
+        }
+        
+        [data-testid="stSidebar"] > div:first-child {
+            width: 280px !important;
+        }
+        
+        /* Force sidebar to always be open and prevent collapse */
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            margin-left: 0 !important;
+        }
+        
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        section[data-testid="stSidebar"] {
+            position: relative !important;
+            transform: none !important;
+            margin-left: 0 !important;
+            max-width: 280px !important;
+            width: 280px !important;
+        }
+        
+        section[data-testid="stSidebar"] > div {
+            transform: none !important;
+            position: relative !important;
+            width: 280px !important;
         }
         
         /* Sidebar button styling */
-        [data-testid="stSidebar"] [data-testid="stButton"] button {
-            background: transparent !important;
-            border: none !important;
-            color: #2E2E2E !important;
-            text-align: left !important;
-            padding: 10px 20px !important;
-            font-size: 16px !important;
-            font-weight: 400 !important;
-            border-radius: 0 !important;
-            width: 100% !important;
-            margin-bottom: 0px !important;
+        [data-testid="stSidebar"] .stButton > button {
+            width: 100%;
+            border-radius: 8px;
+            padding: 10px 10px;
+            font-size: 16px;
+            font-weight: 400;
+            border: none;
+            background-color: transparent;
+            color: #2E2E2E;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
-        [data-testid="stSidebar"] [data-testid="stButton"] button:hover {
-            background: #f5f5f5 !important;
+        [data-testid="stSidebar"] .stButton > button:hover {
+            background-color: #f5f5f5;
         }
         
-        [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
-            background: #E8E6FF !important;
-            border-left: 2px solid #51287E !important;
+        [data-testid="stSidebar"] .stButton > button[kind="primary"] {
+            background-color: #E8E6FF !important;
             color: #51287E !important;
-            font-weight: 400 !important;
+            border-left: 2px solid #51287E !important;
+        }
+        
+        /* Add New Course button - override everything */
+        .main div[data-testid="column"]:nth-child(2) .stButton > button,
+        .main div[data-testid="column"]:nth-child(2) button[data-testid="baseButton-secondary"] {
+            background: #51287E !important;
+            border: 1px solid #51287E !important;
+            border-radius: 30px !important;
+            color: #FFFFFF !important;
+            font-family: 'Roboto', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            padding: 10px 20px !important;
+            height: 40px !important;
+            text-align: center !important;
+            justify-content: center !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        /* View More Details button - override everything */
+        .main [data-testid="column"] .detail-card .stButton > button,
+        .main [data-testid="column"] .detail-card button[data-testid="baseButton-secondary"] {
+            background: #51287E !important;
+            border: 1px solid #51287E !important;
+            border-radius: 30px !important;
+            color: #FFFFFF !important;
+            font-family: 'Roboto', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+            padding: 10px 20px !important;
+            text-align: center !important;
+            justify-content: center !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        .main [data-testid="column"] .detail-card .stButton > button:hover,
+        .main [data-testid="column"] .detail-card button[data-testid="baseButton-secondary"]:hover {
+            background: #3d1e5f !important;
         }
         
         .metric-card {
@@ -209,6 +282,14 @@ st.markdown("""
             color: #000000 !important;
         }
         
+        .stTextInput > div {
+            background: white !important;
+        }
+        
+        .stTextInput > div > div {
+            background: white !important;
+        }
+        
         .stTextInput > div > div > input {
             background: white !important;
             color: #000000 !important;
@@ -243,10 +324,9 @@ with st.sidebar:
         st.switch_page("pages/admin.py")
     
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("---")
     
-    if st.button("🚪  Logout", key="logout"):
-        st.switch_page("pages/login.py")
+    if st.button("🚪  Logout", key="nav_logout", use_container_width=True):
+        st.switch_page("Home.py")
 
 # Main Content
 col_header1, col_header2 = st.columns([2, 1])

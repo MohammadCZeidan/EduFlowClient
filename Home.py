@@ -63,18 +63,14 @@ st.markdown("""
         }
         
         /* Style login button */
-        [data-testid="stButton"] button[kind="primary"] {
-            background: #6C4FF7 !important;
-            color: white !important;
+        [data-testid="stButton"] button {
+            background: #51287E !important;
+            color: #FFFFFF !important;
             border: none !important;
             border-radius: 25px !important;
             padding: clamp(0.7em, 1.2vw, 1em) clamp(2em, 4vw, 2.8em) !important;
             font-weight: 600 !important;
             font-size: clamp(1em, 1.8vw, 1.15em) !important;
-        }
-        
-        [data-testid="stButton"] button[kind="primary"]:hover {
-            background: #5639cc !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -129,3 +125,45 @@ with col2:
         st.warning("Dashboard preview image not found")
     except Exception as e:
         st.warning(f"Could not load dashboard image: {str(e)}")
+
+# Features/Benefits Section
+st.markdown("<div style='padding-top: 80px; padding-bottom: 50px;'></div>", unsafe_allow_html=True)
+
+st.markdown("""
+<div style='text-align: center; margin-bottom: 60px;'>
+    <h2 style='font-size: 2.5em; font-weight: 700; color: #1a1a1a; margin-bottom: 20px;'>Why Choose EduFlow?</h2>
+    <p style='font-size: 1.2em; color: #666; max-width: 700px; margin: 0 auto;'>Streamline your training management with powerful analytics and intuitive tools</p>
+</div>
+""", unsafe_allow_html=True)
+
+feat1, feat2, feat3 = st.columns(3, gap="large")
+
+with feat1:
+    st.markdown("""
+    <div style='text-align: center; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);'>
+        <div style='font-size: 3em; margin-bottom: 20px;'>📊</div>
+        <h3 style='font-size: 1.5em; font-weight: 600; color: #1a1a1a; margin-bottom: 15px;'>Smart Analytics</h3>
+        <p style='color: #666; line-height: 1.6;'>Track registrations, conversions, and revenue in real-time with powerful dashboards</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with feat2:
+    st.markdown("""
+    <div style='text-align: center; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);'>
+        <div style='font-size: 3em; margin-bottom: 20px;'>📚</div>
+        <h3 style='font-size: 1.5em; font-weight: 600; color: #1a1a1a; margin-bottom: 15px;'>Course Management</h3>
+        <p style='color: #666; line-height: 1.6;'>Organize courses, track participants, and manage payments from one platform</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with feat3:
+    st.markdown("""
+    <div style='text-align: center; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);'>
+        <div style='font-size: 3em; margin-bottom: 20px;'>👥</div>
+        <h3 style='font-size: 1.5em; font-weight: 600; color: #1a1a1a; margin-bottom: 15px;'>Team Collaboration</h3>
+        <p style='color: #666; line-height: 1.6;'>Enable your team to work together seamlessly with role-based access</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<div style='padding-bottom: 50px;'></div>", unsafe_allow_html=True)
+

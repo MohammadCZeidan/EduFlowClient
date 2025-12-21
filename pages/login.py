@@ -66,7 +66,7 @@ st.markdown("""
             font-weight: 700;
             font-size: 13px;
             line-height: 15px;
-            text-align: center;
+            text-align: left;
             color: #2E2E2E;
             margin-bottom: 53px;
         }

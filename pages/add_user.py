@@ -26,19 +26,49 @@ st.markdown("""
     /* Sidebar styling */
     [data-testid="stSidebar"] {
         background-color: white !important;
-        padding: 35px 30px 50px !important;
+        padding: 0 !important;
+        max-width: 280px !important;
+        min-width: 280px !important;
+        width: 280px !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        width: 280px !important;
+    }
+    
+    /* Force sidebar to always be open and prevent collapse */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        margin-left: 0 !important;
+    }
+    
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    
+    section[data-testid="stSidebar"] {
+        position: relative !important;
+        transform: none !important;
+        margin-left: 0 !important;
+        max-width: 280px !important;
+        width: 280px !important;
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        transform: none !important;
+        position: relative !important;
+        width: 280px !important;
     }
     
     /* Sidebar button styling */
     .stButton > button {
         width: 100%;
         border-radius: 8px;
-        padding: 10px 20px;
+        padding: 10px 10px;
         font-size: 16px;
         font-weight: 400;
         border: none;
-        background-color: white;
-        color: #000000;
+        background-color: transparent;
+        color: #2E2E2E;
         text-align: left;
         display: flex;
         align-items: center;
@@ -46,12 +76,12 @@ st.markdown("""
     }
     
     .stButton > button:hover {
-        background-color: white;
+        background-color: #f5f5f5;
     }
     
     .stButton > button[kind="primary"] {
-        background-color: white !important;
-        color: #000000 !important;
+        background-color: #E8E6FF !important;
+        color: #51287E !important;
         border-left: 2px solid #51287E !important;
     }
     
@@ -199,6 +229,11 @@ with st.sidebar:
     
     if st.button("👤 Admin", key="nav_admin", type="primary", use_container_width=True):
         st.switch_page("pages/admin.py")
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    if st.button("🚪 Logout", key="nav_logout", use_container_width=True):
+        st.switch_page("Home.py")
 
 # Main content
 # Breadcrumb navigation

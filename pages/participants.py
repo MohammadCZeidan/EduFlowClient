@@ -44,6 +44,14 @@ st.markdown("""
         color: #000000 !important;
     }
     
+    .stTextInput > div {
+        background: white !important;
+    }
+    
+    .stTextInput > div > div {
+        background: white !important;
+    }
+    
     .stTextInput > div > div > input {
         background: white !important;
         color: #000000 !important;
@@ -56,14 +64,44 @@ st.markdown("""
     /* Sidebar styling */
     [data-testid="stSidebar"] {
         background-color: white !important;
-        padding: 35px 30px 50px !important;
+        padding: 0 !important;
+        max-width: 280px !important;
+        min-width: 280px !important;
+        width: 280px !important;
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        width: 280px !important;
+    }
+    
+    /* Force sidebar to always be open and prevent collapse */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        margin-left: 0 !important;
+    }
+    
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    
+    section[data-testid="stSidebar"] {
+        position: relative !important;
+        transform: none !important;
+        margin-left: 0 !important;
+        max-width: 280px !important;
+        width: 280px !important;
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        transform: none !important;
+        position: relative !important;
+        width: 280px !important;
     }
     
     /* Sidebar button styling */
     .stButton > button {
         width: 100%;
         border-radius: 8px;
-        padding: 10px 20px;
+        padding: 10px 10px;
         font-size: 16px;
         font-weight: 400;
         border: none;
@@ -340,8 +378,11 @@ with st.sidebar:
         st.switch_page("pages/payments.py")
     
     if st.button("� Admin", key="nav_admin", use_container_width=True):
-        st.switch_page("pages/admin.py")
-
+        st.switch_page("pages/admin.py")    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    if st.button("🚪 Logout", key="nav_logout", use_container_width=True):
+        st.switch_page("Home.py")
 # Main content
 st.markdown('<div class="page-header">Participants</div>', unsafe_allow_html=True)
 
